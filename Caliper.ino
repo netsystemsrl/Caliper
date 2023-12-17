@@ -2735,7 +2735,6 @@ void setup() {
   /* RETRIVE IMAGE  ONLINE ----------------------------------------------------*/
   /* Get image data from URL  */
   String responseImg = callURL(geqo_url, "/ingr.bmp","");
-  Serial.println("responseImg");
   
   uint16_t *imageData = (uint16_t *)malloc(responseImg.length());
   uint8_t bmpHeader[54];
@@ -2752,28 +2751,21 @@ void setup() {
   Serial.println(bmpHeader[1]);
   Serial.println(bmpHeader[30]);
 
-  // Check if the BMP is uncompressed
-  if (bmpHeader[0] != 'B' || bmpHeader[1] != 'M' || *(int32_t *)&bmpHeader[30] != 0) {
-    Serial.println("BMP not");
-    //return;
-  }
-
   // Load BMP uncompressed
   spr.fillSprite(TFT_BLACK);
   int padding = (4 - (bmpWidth * 3) % 4) % 4;
   spr.createSprite(bmpWidth, bmpHeight);
   uint8_t *lineBuffer = (uint8_t *)malloc(bmpWidth * 3);
-  int offsetRow = 54;
+  int offsetRow = 54; //54
   for (int y = 0; y < bmpHeight; y++) {
-    Serial.println("Row");
     for (unsigned int i = 0; i < bmpWidth*3; i++) {
       lineBuffer[i] = (byte)responseImg[i+offsetRow];
-      Serial.print(responseImg[i]);
     }
     for (int x = 0; x < bmpWidth; x++) {
       uint16_t color = spr.color565(lineBuffer[x * 3 + 2], lineBuffer[x * 3 + 1], lineBuffer[x * 3]);
-      spr.drawPixel(x, bmpHeight - y - 1, color);  // Draw in sprite buffer
+      spr.drawPixel(x, bmpHeight - y - 1, color);  
     }
+    offsetRow = (y*bmpWidth * 3) ;
     offsetRow = (y*bmpWidth * 3) + padding;
   }
   free(lineBuffer);
