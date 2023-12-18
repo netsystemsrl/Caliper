@@ -2732,7 +2732,85 @@ void setup() {
   #endif
 
 
-  /* RETRIVE IMAGE  ONLINE ----------------------------------------------------*/
+  DynamicJsonDocument doc(1024);
+  String jsonString;
+  serializeJson(doc, jsonString);
+  String response = callURL(geqo_url, (String) "/index.php?" + "api=" + geqo_api + "&" + "mac=" + chipId, jsonString);
+  Serial.println("[BarcodeTxHTTP]:");
+  Serial.println(jsonString);
+  Serial.println(response);
+
+  if (!response.isEmpty()) {
+    DynamicJsonDocument doc(257600);
+    DeserializationError error = deserializeJson(doc, response);
+
+    if (error) {
+      Serial.print("Scheduler Failed to parse JSON: ");
+      Serial.println(error.c_str());
+    }
+
+    id = doc["ID"].as<String>();
+    descrizione = doc["DESCRIZIONE"].as<String>();
+    minimo = doc["MIN"].as<String>();
+    massimo = doc["MAX"].as<String>();
+    image_b64 = doc["IMAGE"].as<String>();
+
+    Serial.print("Image: ");
+    Serial.println(image_b64);  // null
+    size_t decode_len = TD_BASE64.getDecodeLength(image_b64);
+
+    uint8_t image_decode[decode_len];
+    TD_BASE64.decode(image_b64, image_decode);
+
+    Serial.println(id);
+    Serial.println(descrizione);
+    Serial.println(minimo);
+    Serial.println(massimo);
+    Serial.println((char *)image_decode);
+
+
+    spr.fillRect(0, LINEHEIGHT * 2, WIDTH, LINEHEIGHT * 2, TFT_BLACK);
+    spr.setCursor(0, LINEHEIGHT * 2);
+    spr.setTextSize(3);
+    spr.println(descrizione + "\n");
+    spr.setTextSize(4);
+    spr.print(minimo);
+    spr.print("<->");
+    spr.println(massimo);
+
+    spr.pushImage(296, 0, 280, 280, (uint16_t *)image_decode);
+    // lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)spr.getPointer());
+
+
+  /*
+    spr.setRotation(2);  // portrait
+    spr.fillScreen(random(0xFFFF));
+    int x = (spr.width()  - 300) / 2 - 1;
+    int y = (spr.height() - 300) / 2 - 1;
+    drawArrayJpeg(imageData, sizeof(imageData), x, y); // Draw a jpeg image stored in memory at x,y
+    delay(2000);
+
+    //drawJpeg(imageData,responseImg.length());
+
+  */
+  /* START LOOP2 -------------------------------------------------------------
+    Serial.println("START SECOND CORE");
+    xTaskCreatePinnedToCore(
+                            loop2,     //Task function.
+                            "loop2",   // name of task. 
+                            10000,     // Stack size of task 
+                            NULL,      // parameter of the task 
+                            1,         // priority of the task 
+                            &Task2,    // Task handle to keep track of created task 
+                            0);        // pin task to core 1 
+  */
+
+  PREV_MILLIS_CONN = millis();
+  Serial.println("OK ALL started");
+}
+
+void imageurl(){
+   /* RETRIVE IMAGE  ONLINE ----------------------------------------------------*/
   /* Get image data from URL  */
   String responseImg = callURL(geqo_url, "/ingr.bmp","");
   
@@ -2771,36 +2849,7 @@ void setup() {
   free(lineBuffer);
   spr.pushSprite(0, 0);
   lcd_PushColors(0, 0, WIDTH, HEIGHT, (uint16_t *)spr.getPointer());
-
-
-  /*
-    spr.setRotation(2);  // portrait
-    spr.fillScreen(random(0xFFFF));
-    int x = (spr.width()  - 300) / 2 - 1;
-    int y = (spr.height() - 300) / 2 - 1;
-    drawArrayJpeg(imageData, sizeof(imageData), x, y); // Draw a jpeg image stored in memory at x,y
-    delay(2000);
-
-    //drawJpeg(imageData,responseImg.length());
-
-  */
-  /* START LOOP2 -------------------------------------------------------------
-    Serial.println("START SECOND CORE");
-    xTaskCreatePinnedToCore(
-                            loop2,     //Task function.
-                            "loop2",   // name of task. 
-                            10000,     // Stack size of task 
-                            NULL,      // parameter of the task 
-                            1,         // priority of the task 
-                            &Task2,    // Task handle to keep track of created task 
-                            0);        // pin task to core 1 
-  */
-
-  PREV_MILLIS_CONN = millis();
-  Serial.println("OK ALL started");
 }
-
-
 /* LOOP MAIN  ----------------------------------------------------------------*/
 
 void loop() {
