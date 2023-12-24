@@ -1931,7 +1931,8 @@ String callURL(const String &Server = "api.geqo.it", const String &url = "/index
               }
             } else {
               char c = w_client.read();
-              response += c;
+              response.concat(c);
+              //response += c;
               timeout = millis();
             }
           }
